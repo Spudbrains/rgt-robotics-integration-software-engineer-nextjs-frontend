@@ -37,12 +37,13 @@ src/app/
 │   ├── BookCard.tsx    # Book display card
 │   ├── SearchBar.tsx   # Search functionality
 │   └── Pagination.tsx  # Page navigation
-├── pages/              # Application pages
-│   ├── books/          # Book-related pages
-│   │   ├── index.tsx   # Book list page
-│   │   └── [id].tsx    # Book detail page
-│   └── admin/          # Admin pages
-│       └── books.tsx   # Book management
+├── books/              # Book-related pages
+│   ├── page.tsx        # Book list page
+│   └── [id]/           # Book detail page
+│       └── page.tsx    # Individual book page
+├── admin/              # Admin pages
+│   └── books/          # Book management
+│       └── page.tsx    # Admin book management
 ├── services/           # API service functions
 │   └── api.ts         # Book API integration
 ├── types/              # TypeScript type definitions
@@ -157,23 +158,23 @@ Strict TypeScript configuration with comprehensive type definitions for all data
 ## 📱 Pages
 
 ### `/` (Home)
-- Redirects to `/pages/books`
+- Redirects to `/books`
 - Loading screen during redirect
 
-### `/pages/books` (Book List)
+### `/books` (Book List)
 - Display all books in a grid layout
 - Search and filtering capabilities
 - Pagination (10 books per page)
 - Sort by various criteria
 - Purchase functionality
 
-### `/pages/books/[id]` (Book Detail)
+### `/books/[id]` (Book Detail)
 - Comprehensive book information
 - Purchase button
 - Link to admin management
 - Responsive layout
 
-### `/pages/admin/books` (Admin Management)
+### `/admin/books` (Admin Management)
 - Full CRUD operations for books
 - Modal forms for add/edit
 - Delete confirmation

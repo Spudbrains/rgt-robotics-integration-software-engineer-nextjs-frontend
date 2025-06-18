@@ -2,6 +2,7 @@
 
 import { Book } from '../types/book';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface BookCardProps {
   book: Book;
@@ -21,9 +22,11 @@ export default function BookCard({ book, showStock = true, onSell }: BookCardPro
       {/* Book Image */}
       <div className="h-48 bg-gray-200 flex items-center justify-center">
         {book.imageUrl ? (
-          <img
+          <Image
             src={book.imageUrl}
             alt={book.title}
+            width={300}
+            height={200}
             className="w-full h-full object-cover"
           />
         ) : (
@@ -33,7 +36,7 @@ export default function BookCard({ book, showStock = true, onSell }: BookCardPro
 
       {/* Book Info */}
       <div className="p-4">
-        <Link href={`/pages/books/${book.id}`} className="block">
+        <Link href={`/books/${book.id}`} className="block">
           <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-200 line-clamp-2">
             {book.title}
           </h3>
@@ -66,7 +69,7 @@ export default function BookCard({ book, showStock = true, onSell }: BookCardPro
         {/* Action Buttons */}
         <div className="mt-4 flex gap-2">
           <Link
-            href={`/pages/books/${book.id}`}
+            href={`/books/${book.id}`}
             className="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200 text-sm"
           >
             View Details

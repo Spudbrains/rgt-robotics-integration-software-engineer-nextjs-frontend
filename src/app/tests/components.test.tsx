@@ -114,7 +114,7 @@ describe('Pagination Component', () => {
   test('renders pagination controls', () => {
     render(
       <Pagination
-        currentPage={1}
+        currentPage={0}
         totalPages={5}
         onPageChange={mockOnPageChange}
       />
@@ -132,7 +132,7 @@ describe('Pagination Component', () => {
   test('does not render when totalPages is 1', () => {
     const { container } = render(
       <Pagination
-        currentPage={1}
+        currentPage={0}
         totalPages={1}
         onPageChange={mockOnPageChange}
       />
@@ -144,7 +144,7 @@ describe('Pagination Component', () => {
   test('calls onPageChange when page number is clicked', () => {
     render(
       <Pagination
-        currentPage={1}
+        currentPage={0}
         totalPages={5}
         onPageChange={mockOnPageChange}
       />
@@ -153,13 +153,13 @@ describe('Pagination Component', () => {
     const page2Button = screen.getByText('2')
     fireEvent.click(page2Button)
 
-    expect(mockOnPageChange).toHaveBeenCalledWith(2)
+    expect(mockOnPageChange).toHaveBeenCalledWith(1)
   })
 
   test('calls onPageChange when next button is clicked', () => {
     render(
       <Pagination
-        currentPage={1}
+        currentPage={0}
         totalPages={5}
         onPageChange={mockOnPageChange}
       />
@@ -168,13 +168,13 @@ describe('Pagination Component', () => {
     const nextButton = screen.getByText('Next')
     fireEvent.click(nextButton)
 
-    expect(mockOnPageChange).toHaveBeenCalledWith(2)
+    expect(mockOnPageChange).toHaveBeenCalledWith(1)
   })
 
   test('calls onPageChange when previous button is clicked', () => {
     render(
       <Pagination
-        currentPage={2}
+        currentPage={1}
         totalPages={5}
         onPageChange={mockOnPageChange}
       />
@@ -183,13 +183,13 @@ describe('Pagination Component', () => {
     const previousButton = screen.getByText('Previous')
     fireEvent.click(previousButton)
 
-    expect(mockOnPageChange).toHaveBeenCalledWith(1)
+    expect(mockOnPageChange).toHaveBeenCalledWith(0)
   })
 
   test('disables previous button on first page', () => {
     render(
       <Pagination
-        currentPage={1}
+        currentPage={0}
         totalPages={5}
         onPageChange={mockOnPageChange}
       />
@@ -202,7 +202,7 @@ describe('Pagination Component', () => {
   test('disables next button on last page', () => {
     render(
       <Pagination
-        currentPage={5}
+        currentPage={4}
         totalPages={5}
         onPageChange={mockOnPageChange}
       />
@@ -215,7 +215,7 @@ describe('Pagination Component', () => {
   test('shows ellipsis for large page counts', () => {
     render(
       <Pagination
-        currentPage={1}
+        currentPage={0}
         totalPages={10}
         onPageChange={mockOnPageChange}
       />

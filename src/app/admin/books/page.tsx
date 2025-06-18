@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Book, CreateBookRequest } from '../../types/book';
 import { bookApi } from '../../services/api';
 import BookCard from '../../components/BookCard';
@@ -16,7 +16,7 @@ export default function AdminBooksPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalBooks, setTotalBooks] = useState(0);
   
@@ -35,7 +35,7 @@ export default function AdminBooksPage() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchBooks = async () => {
+  const fetchBooks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -55,15 +55,15 @@ export default function AdminBooksPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchQuery]);
 
   useEffect(() => {
     fetchBooks();
-  }, [currentPage, searchQuery]);
+  }, [fetchBooks]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setCurrentPage(1);
+    setCurrentPage(0);
   };
 
   const handlePageChange = (page: number) => {
@@ -150,7 +150,7 @@ export default function AdminBooksPage() {
 
   if (loading && books.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -161,7 +161,7 @@ export default function AdminBooksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8 flex justify-between items-center">

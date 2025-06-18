@@ -1,24 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Book, BookListResponse } from '../../types/book';
-import { bookApi } from '../../services/api';
-import BookCard from '../../components/BookCard';
-import SearchBar from '../../components/SearchBar';
-import Pagination from '../../components/Pagination';
+import { useState, useEffect, useCallback } from 'react';
+import { Book, BookListResponse } from '../types/book';
+import { bookApi } from '../services/api';
+import BookCard from '../components/BookCard';
+import SearchBar from '../components/SearchBar';
+import Pagination from '../components/Pagination';
 
 export default function BookListPage() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalBooks, setTotalBooks] = useState(0);
   const [sortBy, setSortBy] = useState<'title' | 'author' | 'price' | 'createdAt'>('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const fetchBooks = async () => {
+  const fetchBooks = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -40,19 +40,19 @@ export default function BookListPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, searchQuery, sortBy, sortOrder]);
 
   useEffect(() => {
     fetchBooks();
-  }, [currentPage, searchQuery, sortBy, sortOrder]);
+  }, [fetchBooks]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page when searching
+    setCurrentPage(0); // Reset to first page when searching
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    setCurrentPage(page); // Pagination component now handles 0-based internally
   };
 
   const handleSell = async (bookId: string) => {
@@ -77,7 +77,7 @@ export default function BookListPage() {
 
   if (loading && books.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 py-4">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -88,7 +88,7 @@ export default function BookListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">

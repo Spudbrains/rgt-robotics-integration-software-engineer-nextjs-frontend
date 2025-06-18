@@ -8,7 +8,7 @@ export default function Home() {
 
   useEffect(() => {
     // Redirect to the book list page
-    router.push('/pages/books');
+    router.push('/books');
   }, [router]);
 
   return (

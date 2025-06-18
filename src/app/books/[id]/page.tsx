@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Book } from '../../types/book';
 import { bookApi } from '../../services/api';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function BookDetailPage() {
   const params = useParams();
@@ -54,12 +55,12 @@ export default function BookDetailPage() {
   };
 
   const handleBackToList = () => {
-    router.push('/pages/books');
+    router.push('/books');
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 py-4">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -71,7 +72,7 @@ export default function BookDetailPage() {
 
   if (error || !book) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-gray-50 py-4">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center py-12">
             <div className="text-red-400 text-6xl mb-4">❌</div>
@@ -90,7 +91,7 @@ export default function BookDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-4">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button
@@ -110,9 +111,11 @@ export default function BookDetailPage() {
             <div className="md:w-1/3">
               <div className="h-96 md:h-full bg-gray-200 flex items-center justify-center">
                 {book.imageUrl ? (
-                  <img
+                  <Image
                     src={book.imageUrl}
                     alt={book.title}
+                    width={384}
+                    height={512}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -187,7 +190,7 @@ export default function BookDetailPage() {
                 </button>
                 
                 <Link
-                  href={`/pages/admin/books`}
+                  href={`/admin/books`}
                   className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 transition-colors font-medium text-center"
                 >
                   Manage Books
@@ -200,4 +203,3 @@ export default function BookDetailPage() {
     </div>
   );
 }
-
