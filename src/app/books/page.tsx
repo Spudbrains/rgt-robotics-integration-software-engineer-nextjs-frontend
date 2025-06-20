@@ -341,7 +341,7 @@ const BookListContent = memo(function BookListContent() {
       </div>
     </div>
   );
-}
+});
 
 export default function BookListPage() {
   return (
