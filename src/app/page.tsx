@@ -7,8 +7,22 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to the book list page
-    router.push('/books');
+    // Use a flag to prevent navigation if component unmounts
+    let isMounted = true;
+    
+    const redirect = () => {
+      if (isMounted) {
+        router.push('/books');
+      }
+    };
+
+    // Small delay to show loading state
+    const timer = setTimeout(redirect, 100);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
   }, [router]);
 
   return (

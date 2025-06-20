@@ -44,9 +44,11 @@ export default function BookDetailPage() {
     try {
       setSelling(true);
       await bookApi.sellBook(book.id, 1);
-      // Update the book data to reflect the new stock
-      const updatedBook = await bookApi.getBook(book.id);
-      setBook(updatedBook);
+      
+      // Update local state immediately instead of re-fetching
+      setBook(prevBook => 
+        prevBook ? { ...prevBook, stock: Math.max(0, prevBook.stock - 1) } : null
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to sell book');
       console.error('Error selling book:', err);
