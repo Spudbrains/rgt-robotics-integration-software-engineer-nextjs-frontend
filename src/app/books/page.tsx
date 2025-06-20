@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useRef, memo } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { Book, BookListResponse } from '../types/book';
 import { bookApi } from '../services/api';
 import BookCard from '../components/BookCard';
@@ -10,7 +10,6 @@ import Pagination from '../components/Pagination';
 
 const BookListContent = memo(function BookListContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
   
   const [books, setBooks] = useState<Book[]>([]);
@@ -71,8 +70,8 @@ const BookListContent = memo(function BookListContent() {
   }, [searchParams]);
 
   const updateURL = useCallback((params: Record<string, string>) => {
-    console.log('Books: updateURL called with params:', params);
-    const newSearchParams = new URLSearchParams(searchParams.toString());
+    console.log('Books: Updating URL with replaceState:', params);
+    const newSearchParams = new URLSearchParams(window.location.search);
     Object.entries(params).forEach(([key, value]) => {
       if (value) {
         newSearchParams.set(key, value);
@@ -81,11 +80,10 @@ const BookListContent = memo(function BookListContent() {
       }
     });
     const newURL = `${pathname}?${newSearchParams.toString()}`;
-    console.log('Books: Navigating to new URL:', newURL);
     
-    // Use Next.js router with scroll: false to prevent auto-scrolling
-    router.replace(newURL, { scroll: false });
-  }, [searchParams, router, pathname]);
+    // Use replaceState to avoid triggering router events and extension interference.
+    window.history.replaceState({ ...window.history.state, as: newURL, url: newURL }, '', newURL);
+  }, [pathname]);
 
   const fetchBooks = useCallback(async () => {
     const requestKey = `page=${currentPage}&search=${searchQuery}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
