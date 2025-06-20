@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Sale, SalesResponse } from '../types/book';
+import { Sale } from '../types/book';
 import { bookApi } from '../services/api';
 import Pagination from './Pagination';
 
