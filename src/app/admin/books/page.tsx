@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname } from 'next/navigation';
 import { Book, CreateBookRequest } from '../../types/book';
 import { bookApi } from '../../services/api';
 import BookCard from '../../components/BookCard';
@@ -14,7 +14,6 @@ interface BookFormData extends CreateBookRequest {
 
 function AdminBooksContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
   
   const [books, setBooks] = useState<Book[]>([]);
@@ -80,11 +79,11 @@ function AdminBooksContent() {
       }
     });
     const newURL = `${pathname}?${newSearchParams.toString()}`;
-    console.log('Admin: Navigating to new URL:', newURL);
+    console.log('Admin: Would navigate to new URL:', newURL);
     
-    // Use replace with scroll: false to prevent auto-scroll
-    router.replace(newURL, { scroll: false });
-  }, [searchParams, router, pathname]);
+    // Don't actually navigate - just update the URL in the address bar without triggering history
+    window.history.replaceState({}, '', newURL);
+  }, [searchParams, pathname]);
 
   const fetchBooks = useCallback(async () => {
     try {
