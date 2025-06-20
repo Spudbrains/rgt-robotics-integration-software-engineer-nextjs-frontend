@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -10,15 +10,21 @@ interface SearchBarProps {
 
 export default function SearchBar({ onSearch, placeholder = "Search books by title or author...", className = "" }: SearchBarProps) {
   const [query, setQuery] = useState('');
+  const onSearchRef = useRef(onSearch);
+
+  // Update ref when onSearch changes
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
 
   // Debounce search to avoid too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
-      onSearch(query);
+      onSearchRef.current(query);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query]); // Only depend on query, use ref for onSearch
 
   return (
     <div className={`relative ${className}`}>

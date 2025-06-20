@@ -48,6 +48,7 @@ function AdminBooksContent() {
     setCurrentPage(urlPage);
     setSearchQuery(urlSearch);
     setIsInitialized(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const updateURL = useCallback((params: Record<string, string>) => {

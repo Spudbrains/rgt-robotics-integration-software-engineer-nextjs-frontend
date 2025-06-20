@@ -39,6 +39,7 @@ function BookListContent() {
     setSortBy(urlSortBy);
     setSortOrder(urlSortOrder);
     setIsInitialized(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Correct: Empty dependency array ensures this runs only once on mount.
 
   const updateURL = useCallback((params: Record<string, string>) => {
