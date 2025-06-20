@@ -3,6 +3,7 @@
 import { Book } from '../types/book';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
 
 interface BookCardProps {
   book: Book;
@@ -11,23 +12,31 @@ interface BookCardProps {
 }
 
 export default function BookCard({ book, showStock = true, onSell }: BookCardProps) {
+  const [imageError, setImageError] = useState(false);
+
   const handleSell = () => {
     if (onSell && book.stock > 0) {
       onSell(book.id);
     }
   };
 
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
       {/* Book Image */}
       <div className="h-48 bg-gray-200 flex items-center justify-center">
-        {book.imageUrl ? (
+        {book.imageUrl && !imageError ? (
           <Image
             src={book.imageUrl}
             alt={book.title}
             width={300}
             height={200}
             className="w-full h-full object-cover"
+            onError={handleImageError}
+            unoptimized={book.imageUrl.startsWith('http://localhost')}
           />
         ) : (
           <div className="text-gray-400 text-4xl">📚</div>

@@ -16,6 +16,7 @@ export default function BookDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selling, setSelling] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -56,6 +57,10 @@ export default function BookDetailPage() {
 
   const handleBackToList = () => {
     router.push('/books');
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
   };
 
   if (loading) {
@@ -110,13 +115,15 @@ export default function BookDetailPage() {
             {/* Book Image */}
             <div className="md:w-1/3">
               <div className="h-96 md:h-full bg-gray-200 flex items-center justify-center">
-                {book.imageUrl ? (
+                {book.imageUrl && !imageError ? (
                   <Image
                     src={book.imageUrl}
                     alt={book.title}
                     width={384}
                     height={512}
                     className="w-full h-full object-cover"
+                    onError={handleImageError}
+                    unoptimized={book.imageUrl.startsWith('http://localhost')}
                   />
                 ) : (
                   <div className="text-gray-400 text-8xl">📚</div>
