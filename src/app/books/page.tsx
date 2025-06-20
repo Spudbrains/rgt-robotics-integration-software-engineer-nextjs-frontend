@@ -103,12 +103,12 @@ function BookListContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, sortBy, sortOrder]);
+  }, []);
 
   useEffect(() => {
     console.log('Books: useEffect triggered - fetching books for page:', currentPage);
     fetchBooks();
-  }, [fetchBooks]);
+  }, [currentPage, searchQuery, sortBy, sortOrder]);
 
   const handleSearch = (query: string) => {
     updateURL({ search: query, page: '0' }); // Reset to first page when searching

@@ -112,12 +112,12 @@ function AdminBooksContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery]);
+  }, []);
 
   useEffect(() => {
     console.log('Admin: useEffect triggered - fetching books for page:', currentPage);
     fetchBooks();
-  }, [fetchBooks]);
+  }, [currentPage, searchQuery]);
 
   const handleSearch = (query: string) => {
     updateURL({ search: query, page: '0' });
