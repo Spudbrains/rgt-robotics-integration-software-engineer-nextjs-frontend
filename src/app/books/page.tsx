@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef, memo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Book, BookListResponse } from '../types/book';
 import { bookApi } from '../services/api';
@@ -8,7 +8,7 @@ import BookCard from '../components/BookCard';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 
-function BookListContent() {
+const BookListContent = memo(function BookListContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -28,9 +28,12 @@ function BookListContent() {
   // Request deduplication
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastRequestRef = useRef<string>('');
+  const isInitializedRef = useRef(false);
 
-  // Initialize state from URL parameters on mount
+  // Initialize state from URL parameters on mount only
   useEffect(() => {
+    if (isInitializedRef.current) return;
+    
     const urlPage = parseInt(searchParams.get('page') || '0');
     const urlSearch = searchParams.get('search') || '';
     const urlSortBy = (searchParams.get('sortBy') as 'title' | 'author' | 'price' | 'createdAt') || 'title';
@@ -42,7 +45,8 @@ function BookListContent() {
     setSearchQuery(urlSearch);
     setSortBy(urlSortBy);
     setSortOrder(urlSortOrder);
-  }, []); // Only run on mount
+    isInitializedRef.current = true;
+  }, [searchParams]);
 
   // Debug URL parameters on every render
   console.log('Books: URL Parameters on render:', {
@@ -147,10 +151,21 @@ function BookListContent() {
     }
   }, [currentPage, searchQuery, sortBy, sortOrder]);
 
+  // Single useEffect for fetching books with debouncing
   useEffect(() => {
+    if (!isInitializedRef.current) return; // Don't fetch until initialized
+    
     console.log('Books: useEffect triggered - fetching books for page:', currentPage);
-    fetchBooks();
-  }, [currentPage, searchQuery, sortBy, sortOrder]);
+    
+    // Debounce the fetch to prevent rapid successive calls
+    const timeoutId = setTimeout(() => {
+      fetchBooks();
+    }, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [currentPage, searchQuery, sortBy, sortOrder, fetchBooks]);
 
   // Cleanup function for abort controller
   useEffect(() => {

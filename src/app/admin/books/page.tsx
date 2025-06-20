@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef, memo } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Book, CreateBookRequest } from '../../types/book';
 import { bookApi } from '../../services/api';
@@ -12,7 +12,7 @@ interface BookFormData extends CreateBookRequest {
   id?: string;
 }
 
-function AdminBooksContent() {
+const AdminBooksContent = memo(function AdminBooksContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -30,9 +30,12 @@ function AdminBooksContent() {
   // Request deduplication
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastRequestRef = useRef<string>('');
+  const isInitializedRef = useRef(false);
 
-  // Initialize state from URL parameters on mount
+  // Initialize state from URL parameters on mount only
   useEffect(() => {
+    if (isInitializedRef.current) return;
+    
     const urlPage = parseInt(searchParams.get('page') || '0');
     const urlSearch = searchParams.get('search') || '';
     
@@ -40,7 +43,8 @@ function AdminBooksContent() {
     
     setCurrentPage(urlPage);
     setSearchQuery(urlSearch);
-  }, []); // Only run on mount
+    isInitializedRef.current = true;
+  }, [searchParams]);
   
   // Debug URL parameters on every render
   console.log('Admin: URL Parameters on render:', {
@@ -152,10 +156,21 @@ function AdminBooksContent() {
     }
   }, [currentPage, searchQuery]);
 
+  // Single useEffect for fetching books with debouncing
   useEffect(() => {
+    if (!isInitializedRef.current) return; // Don't fetch until initialized
+    
     console.log('Admin: useEffect triggered - fetching books for page:', currentPage);
-    fetchBooks();
-  }, [currentPage, searchQuery]);
+    
+    // Debounce the fetch to prevent rapid successive calls
+    const timeoutId = setTimeout(() => {
+      fetchBooks();
+    }, 100);
+    
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [currentPage, searchQuery, fetchBooks]);
 
   // Cleanup function for abort controller
   useEffect(() => {
@@ -538,7 +553,7 @@ function AdminBooksContent() {
       </div>
     </div>
   );
-}
+});
 
 export default function AdminBooksPage() {
   return (
