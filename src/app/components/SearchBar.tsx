@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -18,7 +18,7 @@ export default function SearchBar({ onSearch, placeholder = "Search books by tit
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, onSearch]);
+  }, [query]);
 
   return (
     <div className={`relative ${className}`}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, useRef, memo } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { Book, CreateBookRequest } from '../../types/book';
 import { bookApi } from '../../services/api';
@@ -12,7 +12,7 @@ interface BookFormData extends CreateBookRequest {
   id?: string;
 }
 
-const AdminBooksContent = memo(function AdminBooksContent() {
+function AdminBooksContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   
@@ -22,45 +22,11 @@ const AdminBooksContent = memo(function AdminBooksContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalBooks, setTotalBooks] = useState(0);
   
-  // Use local state for pagination to prevent flickering
   const [currentPage, setCurrentPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Request deduplication
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const lastRequestRef = useRef<string>('');
-  const isInitializedRef = useRef(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize state from URL parameters on mount only
-  useEffect(() => {
-    if (isInitializedRef.current) return;
-    
-    const urlPage = parseInt(searchParams.get('page') || '0');
-    const urlSearch = searchParams.get('search') || '';
-    
-    console.log('Admin: Initializing from URL params:', { urlPage, urlSearch });
-    
-    setCurrentPage(urlPage);
-    setSearchQuery(urlSearch);
-    isInitializedRef.current = true;
-  }, []);
-  
-  // Debug URL parameters on every render
-  console.log('Admin: URL Parameters on render:', {
-    page: searchParams.get('page'),
-    search: searchParams.get('search'),
-    currentPage,
-    searchQuery
-  });
-  
-  // Track URL parameter changes
-  useEffect(() => {
-    console.log('Admin: URL parameters changed:', {
-      page: searchParams.get('page'),
-      search: searchParams.get('search')
-    });
-  }, [searchParams]);
-  
   // Form states
   const [showForm, setShowForm] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
@@ -76,8 +42,15 @@ const AdminBooksContent = memo(function AdminBooksContent() {
   });
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get('page') || '0');
+    const urlSearch = searchParams.get('search') || '';
+    setCurrentPage(urlPage);
+    setSearchQuery(urlSearch);
+    setIsInitialized(true);
+  }, []);
+
   const updateURL = useCallback((params: Record<string, string>) => {
-    console.log('Admin: Updating URL with replaceState:', params);
     const newSearchParams = new URLSearchParams(window.location.search);
     Object.entries(params).forEach(([key, value]) => {
       if (value) {
@@ -87,130 +60,44 @@ const AdminBooksContent = memo(function AdminBooksContent() {
       }
     });
     const newURL = `${pathname}?${newSearchParams.toString()}`;
-    
-    // Use replaceState to avoid triggering router events and extension interference.
     window.history.replaceState({ ...window.history.state, as: newURL, url: newURL }, '', newURL);
   }, [pathname]);
 
   const fetchBooks = useCallback(async () => {
-    const requestKey = `page=${currentPage}&search=${searchQuery}`;
-    
-    // Prevent duplicate requests
-    if (lastRequestRef.current === requestKey) {
-      console.log('Admin: Skipping duplicate request for:', requestKey);
-      return;
-    }
-    
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      console.log('Admin: Cancelling previous request');
-      abortControllerRef.current.abort();
-    }
-    
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-    lastRequestRef.current = requestKey;
-    
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('Admin: Fetching books with params:', { currentPage, searchQuery });
-      
       const response = await bookApi.getBooks({
         page: currentPage,
         limit: 10,
         search: searchQuery || undefined,
       });
-
-      console.log('Admin: Received response:', response);
-      console.log('Admin: Setting books, totalPages, totalBooks:', {
-        booksCount: response.books.length,
-        totalPages: response.totalPages,
-        total: response.total
-      });
-
       setBooks(response.books);
       setTotalPages(response.totalPages);
       setTotalBooks(response.total);
-      
-      // Restore scroll position after content update
-      setTimeout(() => {
-        const savedScrollY = sessionStorage.getItem('scrollY');
-        if (savedScrollY) {
-          window.scrollTo(0, parseInt(savedScrollY));
-        }
-      }, 100);
     } catch (err) {
-      // Don't set error if request was aborted
-      if (err instanceof Error && err.name === 'AbortError') {
-        console.log('Admin: Request was aborted');
-        return;
-      }
       setError(err instanceof Error ? err.message : 'Failed to fetch books');
-      console.error('Admin: Error fetching books:', err);
     } finally {
       setLoading(false);
     }
   }, [currentPage, searchQuery]);
 
-  // Single useEffect for fetching books with debouncing
   useEffect(() => {
-    if (!isInitializedRef.current) return; // Don't fetch until initialized
-    
-    console.log('Admin: useEffect triggered - fetching books for page:', currentPage);
-    
-    // Debounce the fetch to prevent rapid successive calls
-    const timeoutId = setTimeout(() => {
+    if (isInitialized) {
       fetchBooks();
-    }, 100);
-    
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [currentPage, searchQuery, fetchBooks]);
-
-  // Cleanup function for abort controller
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  const handleSearch = (query: string) => {
-    console.log('Admin: handleSearch called with query:', query);
-    setSearchQuery(query);
-    setCurrentPage(0);
-    updateURL({ search: query, page: '0' });
-  };
+    }
+  }, [isInitialized, fetchBooks]);
 
   const handlePageChange = (page: number) => {
-    console.log('Admin: handlePageChange called with page:', page);
-    console.log('Admin: Current URL params before update:', {
-      page: searchParams.get('page'),
-      search: searchParams.get('search')
-    });
-    
-    // Update local state immediately
     setCurrentPage(page);
-    
-    // Save current scroll position before navigation
-    sessionStorage.setItem('scrollY', window.scrollY.toString());
-    
     updateURL({ page: page.toString() });
   };
 
-  // Save scroll position on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      sessionStorage.setItem('scrollY', window.scrollY.toString());
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const handleSearch = useCallback((query: string) => {
+    setCurrentPage(0);
+    setSearchQuery(query);
+    updateURL({ search: query, page: '0' });
+  }, [updateURL]);
 
   const resetForm = () => {
     setFormData({
@@ -251,32 +138,27 @@ const AdminBooksContent = memo(function AdminBooksContent() {
 
     try {
       await bookApi.deleteBook(bookId);
-      fetchBooks();
+      fetchBooks(); // Refresh list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete book');
-      console.error('Error deleting book:', err);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setSubmitting(true);
+    setError(null);
     try {
-      setSubmitting(true);
-      setError(null);
-
       if (editingBook) {
         await bookApi.updateBook(editingBook.id, formData);
       } else {
         await bookApi.createBook(formData);
       }
-
       setShowForm(false);
       resetForm();
-      fetchBooks();
+      fetchBooks(); // Refresh list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save book');
-      console.error('Error saving book:', err);
     } finally {
       setSubmitting(false);
     }
@@ -284,274 +166,161 @@ const AdminBooksContent = memo(function AdminBooksContent() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) || 0 : value,
+      [name]: type === 'number' ? parseFloat(value) : value,
     }));
   };
-
-  if (loading && books.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  
+  // The rest of the return statement...
   return (
     <div className="min-h-screen bg-gray-50 py-4">
+      {/* Main container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Header */}
-        <div className="mb-8 flex justify-between items-center">
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Book Management</h1>
-            <p className="text-gray-600">Add, edit, and manage your book inventory</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
+            <p className="text-gray-600">Manage your bookstore inventory</p>
           </div>
           <button
             onClick={handleAddBook}
-            className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors font-medium"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
           >
             Add New Book
           </button>
         </div>
 
-        {/* Search */}
-        <div className="mb-6">
-          <SearchBar onSearch={handleSearch} placeholder="Search books..." className="max-w-md" />
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Error</h3>
-                <div className="mt-2 text-sm text-red-700">{error}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add/Edit Book Form Modal */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <h2 className="text-2xl font-bold mb-4">
-                  {editingBook ? 'Edit Book' : 'Add New Book'}
-                </h2>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-6">{editingBook ? 'Edit Book' : 'Add New Book'}</h2>
+              <form onSubmit={handleSubmit} className="space-y-6">
                 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Title */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Title *
-                      </label>
-                      <input
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                      />
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" name="title" id="title" required value={formData.title} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black" />
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Author *
-                      </label>
-                      <input
-                        type="text"
-                        name="author"
-                        value={formData.author}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        ISBN *
-                      </label>
-                      <input
-                        type="text"
-                        name="isbn"
-                        value={formData.isbn}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Price *
-                      </label>
-                      <input
-                        type="number"
-                        name="price"
-                        value={formData.price}
-                        onChange={handleInputChange}
-                        required
-                        min="0"
-                        step="0.01"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Stock *
-                      </label>
-                      <input
-                        type="number"
-                        name="stock"
-                        value={formData.stock}
-                        onChange={handleInputChange}
-                        required
-                        min="0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Genre
-                      </label>
-                      <input
-                        type="text"
-                        name="genre"
-                        value={formData.genre}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Image URL
-                    </label>
-                    <input
-                      type="url"
-                      name="imageUrl"
-                      value={formData.imageUrl}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
-                    />
-                  </div>
-                  
-                  <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowForm(false);
-                        resetForm();
-                      }}
-                      className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                    >
-                      {submitting ? 'Saving...' : editingBook ? 'Update Book' : 'Add Book'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
-          Showing {books.length} of {totalBooks} books
-        </div>
+                    {/* Author */}
+                    <div>
+                        <label htmlFor="author" className="block text-sm font-medium text-gray-700">Author</label>
+                        <input type="text" name="author" id="author" required value={formData.author} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black" />
+                    </div>
+                </div>
 
-        {/* Books Grid */}
-        {books.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-            {books.map((book) => (
-              <div key={book.id} className="relative">
-                <BookCard book={book} showStock={true} />
-                <div className="absolute top-2 right-2 flex space-x-1">
-                  <button
-                    onClick={() => handleEditBook(book)}
-                    className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
-                    title="Edit book"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
+                {/* ISBN */}
+                <div>
+                    <label htmlFor="isbn" className="block text-sm font-medium text-gray-700">ISBN</label>
+                    <input type="text" name="isbn" id="isbn" required value={formData.isbn} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Price */}
+                    <div>
+                        <label htmlFor="price" className="block text-sm font-medium text-gray-700">Price</label>
+                        <input type="number" name="price" id="price" required value={formData.price} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black" />
+                    </div>
+
+                    {/* Stock */}
+                    <div>
+                        <label htmlFor="stock" className="block text-sm font-medium text-gray-700">Stock</label>
+                        <input type="number" name="stock" id="stock" required value={formData.stock} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black" />
+                    </div>
+                </div>
+
+                {/* Genre */}
+                <div>
+                    <label htmlFor="genre" className="block text-sm font-medium text-gray-700">Genre</label>
+                    <input type="text" name="genre" id="genre" value={formData.genre} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black" />
+                </div>
+
+                {/* Image URL */}
+                <div>
+                    <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700">Image URL</label>
+                    <input type="text" name="imageUrl" id="imageUrl" value={formData.imageUrl} onChange={handleInputChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black" />
+                </div>
+
+                {/* Description */}
+                <div>
+                    <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description" id="description" value={formData.description} onChange={handleInputChange} rows={4} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-black"></textarea>
+                </div>
+                
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                <div className="flex justify-end space-x-4">
+                  <button type="button" onClick={() => setShowForm(false)} className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300">
+                    Cancel
                   </button>
-                  <button
-                    onClick={() => handleDeleteBook(book.id)}
-                    className="bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition-colors"
-                    title="Delete book"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                  <button type="submit" disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-blue-300">
+                    {submitting ? 'Saving...' : 'Save Book'}
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📚</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No books found</h3>
-            <p className="text-gray-600 mb-4">
-              {searchQuery ? 'Try adjusting your search terms.' : 'No books available at the moment.'}
-            </p>
-            {!searchQuery && (
-              <button
-                onClick={handleAddBook}
-                className="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors font-medium"
-              >
-                Add Your First Book
-              </button>
-            )}
+              </form>
+            </div>
           </div>
         )}
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+        {/* Search Bar */}
+        <div className="mb-6">
+          <SearchBar onSearch={handleSearch} className="max-w-md" />
+        </div>
+        
+        {error && !showForm && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+            <p className="text-red-700">{error}</p>
+          </div>
+        )}
+
+        {/* Loading or Content */}
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {books.length} of {totalBooks} books
+            </div>
+
+            {books.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                {books.map((book) => (
+                  <div key={book.id} className="relative">
+                    <BookCard book={book} />
+                    <div className="absolute top-2 right-2 space-x-2">
+                      <button onClick={() => handleEditBook(book)} className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 3.732z" /></svg>
+                      </button>
+                      <button onClick={() => handleDeleteBook(book.id)} className="bg-white p-1.5 rounded-full shadow-md hover:bg-gray-100">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <h3 className="text-lg font-medium text-gray-900">No books found</h3>
+              </div>
+            )}
+            
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </>
+        )}
       </div>
     </div>
   );
-});
+}
 
 export default function AdminBooksPage() {
   return (

@@ -1,6 +1,6 @@
 import { Book, BookListResponse, CreateBookRequest, BookSearchParams } from '../types/book';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
 console.log('API_BASE_URL:', API_BASE_URL);
 console.log('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);

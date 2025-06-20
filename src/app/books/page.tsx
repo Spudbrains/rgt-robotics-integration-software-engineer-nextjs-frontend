@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, useRef, memo } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, usePathname } from 'next/navigation';
 import { Book, BookListResponse } from '../types/book';
 import { bookApi } from '../services/api';
@@ -8,7 +8,7 @@ import BookCard from '../components/BookCard';
 import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 
-const BookListContent = memo(function BookListContent() {
+function BookListContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   
@@ -18,59 +18,30 @@ const BookListContent = memo(function BookListContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalBooks, setTotalBooks] = useState(0);
   
-  // Use local state for pagination to prevent flickering
+  // Use local state for pagination
   const [currentPage, setCurrentPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'author' | 'price' | 'createdAt'>('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  // Request deduplication
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const lastRequestRef = useRef<string>('');
-  const isInitializedRef = useRef(false);
+  // State to ensure initialization runs only once, robustly.
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Initialize state from URL parameters on mount only
   useEffect(() => {
-    if (isInitializedRef.current) return;
-    
-    const urlPage = parseInt(searchParams.get('page') || '0');
+    const urlPage = parseInt(searchParams.get('page') || '0', 10);
     const urlSearch = searchParams.get('search') || '';
     const urlSortBy = (searchParams.get('sortBy') as 'title' | 'author' | 'price' | 'createdAt') || 'title';
     const urlSortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
-    
-    console.log('Books: Initializing from URL params:', { urlPage, urlSearch, urlSortBy, urlSortOrder });
     
     setCurrentPage(urlPage);
     setSearchQuery(urlSearch);
     setSortBy(urlSortBy);
     setSortOrder(urlSortOrder);
-    isInitializedRef.current = true;
-  }, []);
-
-  // Debug URL parameters on every render
-  console.log('Books: URL Parameters on render:', {
-    page: searchParams.get('page'),
-    search: searchParams.get('search'),
-    sortBy: searchParams.get('sortBy'),
-    sortOrder: searchParams.get('sortOrder'),
-    currentPage,
-    searchQuery,
-    parsedSortBy: sortBy,
-    parsedSortOrder: sortOrder
-  });
-
-  // Track URL parameter changes
-  useEffect(() => {
-    console.log('Books: URL parameters changed:', {
-      page: searchParams.get('page'),
-      search: searchParams.get('search'),
-      sortBy: searchParams.get('sortBy'),
-      sortOrder: searchParams.get('sortOrder')
-    });
-  }, [searchParams]);
+    setIsInitialized(true);
+  }, []); // Correct: Empty dependency array ensures this runs only once on mount.
 
   const updateURL = useCallback((params: Record<string, string>) => {
-    console.log('Books: Updating URL with replaceState:', params);
     const newSearchParams = new URLSearchParams(window.location.search);
     Object.entries(params).forEach(([key, value]) => {
       if (value) {
@@ -80,36 +51,13 @@ const BookListContent = memo(function BookListContent() {
       }
     });
     const newURL = `${pathname}?${newSearchParams.toString()}`;
-    
-    // Use replaceState to avoid triggering router events and extension interference.
     window.history.replaceState({ ...window.history.state, as: newURL, url: newURL }, '', newURL);
   }, [pathname]);
 
   const fetchBooks = useCallback(async () => {
-    const requestKey = `page=${currentPage}&search=${searchQuery}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
-    
-    // Prevent duplicate requests
-    if (lastRequestRef.current === requestKey) {
-      console.log('Books: Skipping duplicate request for:', requestKey);
-      return;
-    }
-    
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      console.log('Books: Cancelling previous request');
-      abortControllerRef.current.abort();
-    }
-    
-    // Create new abort controller
-    abortControllerRef.current = new AbortController();
-    lastRequestRef.current = requestKey;
-    
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-      
-      console.log('Books: Fetching books with params:', { currentPage, searchQuery, sortBy, sortOrder });
-      
       const response: BookListResponse = await bookApi.getBooks({
         page: currentPage,
         limit: 10,
@@ -117,111 +65,35 @@ const BookListContent = memo(function BookListContent() {
         sortBy,
         sortOrder,
       });
-
-      console.log('Books: Received response:', response);
-      console.log('Books: Setting books, totalPages, totalBooks:', {
-        booksCount: response.books.length,
-        totalPages: response.totalPages,
-        total: response.total
-      });
-
       setBooks(response.books);
       setTotalPages(response.totalPages);
       setTotalBooks(response.total);
-      
-      // Restore scroll position after content update
-      setTimeout(() => {
-        const savedScrollY = sessionStorage.getItem('scrollY');
-        if (savedScrollY) {
-          window.scrollTo(0, parseInt(savedScrollY));
-        }
-      }, 100);
     } catch (err) {
-      // Don't set error if request was aborted
-      if (err instanceof Error && err.name === 'AbortError') {
-        console.log('Books: Request was aborted');
-        return;
-      }
       setError(err instanceof Error ? err.message : 'Failed to fetch books');
-      console.error('Books: Error fetching books:', err);
     } finally {
       setLoading(false);
     }
   }, [currentPage, searchQuery, sortBy, sortOrder]);
 
-  // Single useEffect for fetching books with debouncing
+  // Data fetching effect
   useEffect(() => {
-    if (!isInitializedRef.current) return; // Don't fetch until initialized
-    
-    console.log('Books: useEffect triggered - fetching books for page:', currentPage);
-    
-    // Debounce the fetch to prevent rapid successive calls
-    const timeoutId = setTimeout(() => {
+    if (isInitialized) {
       fetchBooks();
-    }, 100);
-    
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [currentPage, searchQuery, sortBy, sortOrder, fetchBooks]);
-
-  // Cleanup function for abort controller
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  const handleSearch = (query: string) => {
-    console.log('Books: handleSearch called with query:', query);
-    setSearchQuery(query);
-    setCurrentPage(0); // Reset to first page when searching
-    updateURL({ search: query, page: '0' });
-  };
+    }
+  }, [isInitialized, fetchBooks]);
 
   const handlePageChange = (page: number) => {
-    console.log('Books: handlePageChange called with page:', page);
-    console.log('Books: Current URL params before update:', {
-      page: searchParams.get('page'),
-      search: searchParams.get('search'),
-      sortBy: searchParams.get('sortBy'),
-      sortOrder: searchParams.get('sortOrder')
-    });
-    
-    // Update local state immediately
     setCurrentPage(page);
-    
-    // Save current scroll position before navigation
-    sessionStorage.setItem('scrollY', window.scrollY.toString());
-    
     updateURL({ page: page.toString() });
   };
-
-  // Save scroll position on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      sessionStorage.setItem('scrollY', window.scrollY.toString());
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const handleSell = async (bookId: string) => {
-    try {
-      await bookApi.sellBook(bookId, 1);
-      // Refresh the book list to update stock
-      fetchBooks();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sell book');
-      console.error('Error selling book:', err);
-    }
-  };
+  
+  const handleSearch = useCallback((query: string) => {
+    setCurrentPage(0);
+    setSearchQuery(query);
+    updateURL({ search: query, page: '0' });
+  }, [updateURL]);
 
   const handleSortChange = (newSortBy: typeof sortBy) => {
-    console.log('Books: handleSortChange called with sortBy:', newSortBy);
     if (sortBy === newSortBy) {
       const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
       setSortOrder(newSortOrder);
@@ -233,32 +105,26 @@ const BookListContent = memo(function BookListContent() {
     }
   };
 
-  if (loading && books.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleSell = async (bookId: string) => {
+    try {
+      await bookApi.sellBook(bookId, 1);
+      fetchBooks(); // Re-fetch to update stock
+    } catch (err) {
+      console.error('Error selling book:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sell book');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-4">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Bookstore</h1>
           <p className="text-gray-600">Discover your next favorite book</p>
         </div>
 
-        {/* Search and Filters */}
         <div className="mb-6 space-y-4">
           <SearchBar onSearch={handleSearch} className="max-w-md" />
-          
-          {/* Sort Options */}
           <div className="flex items-center space-x-4">
             <span className="text-sm font-medium text-gray-700">Sort by:</span>
             {[
@@ -287,7 +153,6 @@ const BookListContent = memo(function BookListContent() {
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
             <div className="flex">
@@ -304,42 +169,47 @@ const BookListContent = memo(function BookListContent() {
           </div>
         )}
 
-        {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
-          Showing {books.length} of {totalBooks} books
-        </div>
-
-        {/* Books Grid */}
-        {books.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-            {books.map((book) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                onSell={handleSell}
-              />
-            ))}
-          </div>
+        {loading ? (
+           <div className="flex items-center justify-center h-64">
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+           </div>
         ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📚</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No books found</h3>
-            <p className="text-gray-600">
-              {searchQuery ? 'Try adjusting your search terms.' : 'No books available at the moment.'}
-            </p>
-          </div>
-        )}
+          <>
+            <div className="mb-4 text-sm text-gray-600">
+              Showing {books.length} of {totalBooks} books
+            </div>
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+            {books.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                {books.map((book) => (
+                  <BookCard
+                    key={book.id}
+                    book={book}
+                    onSell={handleSell}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-6xl mb-4">📚</div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No books found</h3>
+                <p className="text-gray-600">
+                  {searchQuery ? 'Try adjusting your search terms.' : 'No books available at the moment.'}
+                </p>
+              </div>
+            )}
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </>
+        )}
       </div>
     </div>
   );
-});
+}
 
 export default function BookListPage() {
   return (

@@ -77,7 +77,7 @@ src/app/
 3. **Set up environment variables**
    Create a `.env.local` file in the root directory:
    ```env
-   NEXT_PUBLIC_API_URL=http://localhost:3001/api
+   NEXT_PUBLIC_API_URL=http://localhost:8080/api
    ```
 
 4. **Run the development server**
@@ -256,7 +256,7 @@ nvm alias default 18
 ```bash
 # Allow port 3000 through firewall
 sudo ufw allow 3000
-sudo ufw allow 3001
+sudo ufw allow 8080
 ```
 
 **5. Memory Issues (for low RAM systems):**
@@ -280,7 +280,7 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 ### Next Steps
 
 After completing the setup:
-1. Ensure your backend API is running on port 3001
+1. Ensure your backend API is running on port 8080
 2. Test the application by navigating to different pages
 3. Run the test suite to verify everything is working
 4. Check the browser console for any errors
