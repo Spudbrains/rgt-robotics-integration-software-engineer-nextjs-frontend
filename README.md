@@ -88,6 +88,204 @@ src/app/
 5. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
+## 🐧 Ubuntu 18.04 Setup Guide
+
+This guide will help you set up the development environment on a freshly installed Ubuntu 18.04 system.
+
+### Step 1: Update System Packages
+```bash
+sudo apt update
+sudo apt upgrade -y
+```
+
+### Step 2: Install Essential Build Tools
+```bash
+sudo apt install -y build-essential curl wget git unzip
+```
+
+### Step 3: Install Node.js 18.x (LTS)
+
+**Option A: Using NodeSource Repository (Recommended)**
+```bash
+# Add NodeSource repository
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+
+# Install Node.js
+sudo apt install -y nodejs
+
+# Verify installation
+node --version
+npm --version
+```
+
+**Option B: Using Node Version Manager (nvm)**
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Reload shell configuration
+source ~/.bashrc
+
+# Install Node.js 18 LTS
+nvm install 18
+nvm use 18
+nvm alias default 18
+
+# Verify installation
+node --version
+npm --version
+```
+
+### Step 4: Install Git (if not already installed)
+```bash
+sudo apt install -y git
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+### Step 5: Install Code Editor (Optional but Recommended)
+
+**VS Code:**
+```bash
+# Download and install VS Code
+wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
+sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/
+sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
+sudo apt update
+sudo apt install -y code
+```
+
+### Step 6: Clone and Setup the Project
+```bash
+# Clone the repository
+git clone <repository-url>
+cd rgt-robotics-integration-software-engineer-nextjs-frontend
+
+# Install project dependencies
+npm install
+```
+
+### Step 7: Configure Environment Variables
+```bash
+# Create environment file
+cp .env.example .env.local 2>/dev/null || touch .env.local
+
+# Edit the environment file
+nano .env.local
+```
+
+Add the following content to `.env.local`:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+```
+
+### Step 8: Install Additional Development Tools (Optional)
+
+**Install Chrome/Chromium for testing:**
+```bash
+# Install Chromium
+sudo apt install -y chromium-browser
+
+# Or install Google Chrome
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+sudo apt update
+sudo apt install -y google-chrome-stable
+```
+
+**Install additional useful tools:**
+```bash
+# Install additional development tools
+sudo apt install -y htop tree jq
+
+# Install Docker (optional, for containerized development)
+sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io
+sudo usermod -aG docker $USER
+```
+
+### Step 9: Run the Application
+```bash
+# Start the development server
+npm run dev
+```
+
+The application will be available at [http://localhost:3000](http://localhost:3000)
+
+### Step 10: Run Tests
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
+
+### Troubleshooting Common Issues
+
+**1. Permission Denied Errors:**
+```bash
+# Fix npm permissions
+sudo chown -R $USER:$USER ~/.npm
+sudo chown -R $USER:$USER ~/.config
+```
+
+**2. Port Already in Use:**
+```bash
+# Find process using port 3000
+sudo lsof -i :3000
+
+# Kill the process
+sudo kill -9 <PID>
+```
+
+**3. Node.js Version Issues:**
+```bash
+# If using nvm, ensure correct version is active
+nvm use 18
+nvm alias default 18
+```
+
+**4. Network/Firewall Issues:**
+```bash
+# Allow port 3000 through firewall
+sudo ufw allow 3000
+sudo ufw allow 3001
+```
+
+**5. Memory Issues (for low RAM systems):**
+```bash
+# Increase Node.js memory limit
+export NODE_OPTIONS="--max-old-space-size=4096"
+```
+
+### System Requirements
+
+- **Minimum:**
+  - 2GB RAM
+  - 10GB free disk space
+  - Ubuntu 18.04 LTS
+
+- **Recommended:**
+  - 4GB+ RAM
+  - 20GB+ free disk space
+  - Ubuntu 18.04 LTS or newer
+
+### Next Steps
+
+After completing the setup:
+1. Ensure your backend API is running on port 3001
+2. Test the application by navigating to different pages
+3. Run the test suite to verify everything is working
+4. Check the browser console for any errors
+5. Review the API integration documentation below
+
 ## 📖 API Integration
 
 The frontend expects a RESTful API with the following endpoints:

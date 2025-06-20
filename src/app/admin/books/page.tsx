@@ -220,7 +220,7 @@ export default function AdminBooksPage() {
                         value={formData.title}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                       />
                     </div>
                     
@@ -234,7 +234,7 @@ export default function AdminBooksPage() {
                         value={formData.author}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                       />
                     </div>
                     
@@ -248,7 +248,7 @@ export default function AdminBooksPage() {
                         value={formData.isbn}
                         onChange={handleInputChange}
                         required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                       />
                     </div>
                     
@@ -264,7 +264,7 @@ export default function AdminBooksPage() {
                         required
                         min="0"
                         step="0.01"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                       />
                     </div>
                     
@@ -279,7 +279,7 @@ export default function AdminBooksPage() {
                         onChange={handleInputChange}
                         required
                         min="0"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                       />
                     </div>
                     
@@ -292,7 +292,7 @@ export default function AdminBooksPage() {
                         name="genre"
                         value={formData.genre}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                       />
                     </div>
                   </div>
@@ -306,7 +306,7 @@ export default function AdminBooksPage() {
                       value={formData.description}
                       onChange={handleInputChange}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                     />
                   </div>
                   
@@ -319,7 +319,7 @@ export default function AdminBooksPage() {
                       name="imageUrl"
                       value={formData.imageUrl}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-black"
                     />
                   </div>
                   
