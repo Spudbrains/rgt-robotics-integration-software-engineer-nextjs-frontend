@@ -43,6 +43,7 @@ function AdminBooksContent() {
   const [submitting, setSubmitting] = useState(false);
 
   const updateURL = useCallback((params: Record<string, string>) => {
+    console.log('Admin: updateURL called with params:', params);
     const newSearchParams = new URLSearchParams(searchParams.toString());
     Object.entries(params).forEach(([key, value]) => {
       if (value) {
@@ -51,7 +52,9 @@ function AdminBooksContent() {
         newSearchParams.delete(key);
       }
     });
-    router.push(`${pathname}?${newSearchParams.toString()}`);
+    const newURL = `${pathname}?${newSearchParams.toString()}`;
+    console.log('Admin: Navigating to new URL:', newURL);
+    router.push(newURL);
   }, [searchParams, router, pathname]);
 
   const fetchBooks = useCallback(async () => {
@@ -59,10 +62,19 @@ function AdminBooksContent() {
       setLoading(true);
       setError(null);
       
+      console.log('Admin: Fetching books with params:', { currentPage, searchQuery });
+      
       const response = await bookApi.getBooks({
         page: currentPage,
         limit: 10,
         search: searchQuery || undefined,
+      });
+
+      console.log('Admin: Received response:', response);
+      console.log('Admin: Setting books, totalPages, totalBooks:', {
+        booksCount: response.books.length,
+        totalPages: response.totalPages,
+        total: response.total
       });
 
       setBooks(response.books);
@@ -85,6 +97,11 @@ function AdminBooksContent() {
   };
 
   const handlePageChange = (page: number) => {
+    console.log('Admin: handlePageChange called with page:', page);
+    console.log('Admin: Current URL params before update:', {
+      page: searchParams.get('page'),
+      search: searchParams.get('search')
+    });
     updateURL({ page: page.toString() });
   };
 

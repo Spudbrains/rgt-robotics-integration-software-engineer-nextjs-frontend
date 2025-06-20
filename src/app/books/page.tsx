@@ -26,6 +26,7 @@ function BookListContent() {
   const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
 
   const updateURL = useCallback((params: Record<string, string>) => {
+    console.log('Books: updateURL called with params:', params);
     const newSearchParams = new URLSearchParams(searchParams.toString());
     Object.entries(params).forEach(([key, value]) => {
       if (value) {
@@ -34,7 +35,9 @@ function BookListContent() {
         newSearchParams.delete(key);
       }
     });
-    router.push(`${pathname}?${newSearchParams.toString()}`);
+    const newURL = `${pathname}?${newSearchParams.toString()}`;
+    console.log('Books: Navigating to new URL:', newURL);
+    router.push(newURL);
   }, [searchParams, router, pathname]);
 
   const fetchBooks = useCallback(async () => {
@@ -42,12 +45,21 @@ function BookListContent() {
       setLoading(true);
       setError(null);
       
+      console.log('Fetching books with params:', { currentPage, searchQuery, sortBy, sortOrder });
+      
       const response: BookListResponse = await bookApi.getBooks({
         page: currentPage,
         limit: 10,
         search: searchQuery || undefined,
         sortBy,
         sortOrder,
+      });
+
+      console.log('Received response:', response);
+      console.log('Setting books, totalPages, totalBooks:', {
+        booksCount: response.books.length,
+        totalPages: response.totalPages,
+        total: response.total
       });
 
       setBooks(response.books);
@@ -70,6 +82,13 @@ function BookListContent() {
   };
 
   const handlePageChange = (page: number) => {
+    console.log('Books: handlePageChange called with page:', page);
+    console.log('Books: Current URL params before update:', {
+      page: searchParams.get('page'),
+      search: searchParams.get('search'),
+      sortBy: searchParams.get('sortBy'),
+      sortOrder: searchParams.get('sortOrder')
+    });
     updateURL({ page: page.toString() });
   };
 

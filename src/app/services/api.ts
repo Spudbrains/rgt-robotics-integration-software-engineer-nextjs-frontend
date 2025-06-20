@@ -33,8 +33,20 @@ export const bookApi = {
     if (params.sortOrder) searchParams.append('sortOrder', params.sortOrder);
 
     const url = `${API_BASE_URL}/books?${searchParams.toString()}`;
+    
+    // Debug logging
+    console.log('API Request - URL:', url);
+    console.log('API Request - Params:', params);
+    
     const response = await fetch(url);
-    return handleResponse<BookListResponse>(response);
+    const data = await handleResponse<BookListResponse>(response);
+    
+    // Debug logging
+    console.log('API Response - Data:', data);
+    console.log('API Response - Current Page:', data.page);
+    console.log('API Response - Total Pages:', data.totalPages);
+    
+    return data;
   },
 
   // Get a single book by ID
