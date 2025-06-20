@@ -332,14 +332,6 @@ This project uses **Jest** and **React Testing Library** for unit and component 
 ### Configuration
 - Jest is configured via `jest.config.js` and `jest.setup.js` for Next.js and React Testing Library compatibility.
 
-## 🎨 Styling
-
-This project uses Tailwind CSS for styling. The design is:
-- **Responsive**: Mobile-first approach
-- **Accessible**: WCAG compliant color contrasts
-- **Modern**: Clean, professional interface
-- **Consistent**: Unified design system
-
 ## 🔧 Configuration
 
 ### Tailwind CSS
@@ -386,40 +378,3 @@ Strict TypeScript configuration with comprehensive type definitions for all data
 - CSRF protection via Next.js
 - Secure API communication
 - Error handling and user feedback
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-1. Connect your GitHub repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy automatically on push to main branch
-
-### Other Platforms
-The application can be deployed to any platform that supports Next.js:
-- Netlify
-- AWS Amplify
-- DigitalOcean App Platform
-- Self-hosted servers
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
-
-## 📄 License
-
-This project is created for the Robotics Integration Software Engineer position at RGT Robotics.
-
-## 🆘 Support
-
-For questions or issues:
-1. Check the documentation
-2. Review existing issues
-3. Create a new issue with detailed information
-
----
-
-**Built with ❤️ using Next.js, TypeScript, and Tailwind CSS**
