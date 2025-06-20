@@ -1,4 +1,4 @@
-import { Book, BookListResponse, CreateBookRequest, BookSearchParams, SalesResponse, SalesSearchParams } from '../types/book';
+import { Book, BookListResponse, CreateBookRequest, BookSearchParams, SalesResponse, SalesSearchParams, Sale } from '../types/book';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -115,16 +115,14 @@ export const bookApi = {
   },
 
   // Get all sales with pagination
-  async getSales(params: SalesSearchParams = {}): Promise<SalesResponse> {
+  async getSales(params: SalesSearchParams = {}): Promise<Sale[]> {
     const searchParams = new URLSearchParams();
-    
     if (params.page) searchParams.append('page', params.page.toString());
     if (params.limit) searchParams.append('limit', params.limit.toString());
     if (params.bookId) searchParams.append('bookId', params.bookId);
-
     const url = `${API_BASE_URL}/sales?${searchParams.toString()}`;
     const response = await fetch(url);
-    return handleResponse<SalesResponse>(response);
+    return handleResponse<Sale[]>(response);
   },
 
   // Get sales for a specific book

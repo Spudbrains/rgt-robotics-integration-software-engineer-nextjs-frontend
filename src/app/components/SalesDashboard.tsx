@@ -27,19 +27,19 @@ export default function SalesDashboard({ className = "" }: SalesDashboardProps) 
       try {
         setLoading(true);
         setError(null);
-        const response: SalesResponse = await bookApi.getSales({
+        const sales: Sale[] = await bookApi.getSales({
           page: currentPage,
           limit: 10,
         });
         
-        setSales(response.sales);
-        setTotalPages(response.totalPages);
-        setTotalSales(response.total);
+        setSales(sales);
+        setTotalPages(1); // No pagination info from backend
+        setTotalSales(sales.length); // Just the length of the array
 
         // Calculate analytics
-        const revenue = response.sales.reduce((sum, sale) => sum + sale.totalPrice, 0);
-        const units = response.sales.reduce((sum, sale) => sum + sale.quantity, 0);
-        const avgOrder = response.sales.length > 0 ? revenue / response.sales.length : 0;
+        const revenue = sales.reduce((sum, sale) => sum + sale.totalPrice, 0);
+        const units = sales.reduce((sum, sale) => sum + sale.quantity, 0);
+        const avgOrder = sales.length > 0 ? revenue / sales.length : 0;
 
         setTotalRevenue(revenue);
         setTotalUnitsSold(units);
