@@ -45,6 +45,17 @@ export default function Navbar() {
             >
               Manage Books
             </Link>
+
+            <Link
+              href="/admin/sales"
+              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                isActive('/admin/sales')
+                  ? 'bg-purple-100 text-purple-700'
+                  : 'text-gray-700 hover:text-purple-600 hover:bg-gray-50'
+              }`}
+            >
+              Sales Analytics
+            </Link>
           </div>
 
           {/* Right side - could add user menu, search, etc. */}
@@ -52,6 +63,7 @@ export default function Navbar() {
             <div className="text-sm text-gray-500">
               {isActive('/books') && 'Customer View'}
               {isActive('/admin/books') && 'Admin Panel'}
+              {isActive('/admin/sales') && 'Sales Analytics'}
             </div>
           </div>
         </div>

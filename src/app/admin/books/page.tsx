@@ -7,6 +7,7 @@ import { bookApi } from '../../services/api';
 import BookCard from '../../components/BookCard';
 import SearchBar from '../../components/SearchBar';
 import Pagination from '../../components/Pagination';
+import Link from 'next/link';
 
 interface BookFormData extends CreateBookRequest {
   id?: string;
@@ -200,12 +201,20 @@ function AdminBooksContent() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Panel</h1>
             <p className="text-gray-600">Manage your bookstore inventory</p>
           </div>
-          <button
-            onClick={handleAddBook}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Add New Book
-          </button>
+          <div className="flex space-x-4">
+            <Link
+              href="/admin/sales"
+              className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors"
+            >
+              View Sales Analytics
+            </Link>
+            <button
+              onClick={handleAddBook}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            >
+              Add New Book
+            </button>
+          </div>
         </div>
 
         {/* Form Modal */}

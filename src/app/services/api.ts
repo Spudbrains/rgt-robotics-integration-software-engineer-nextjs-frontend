@@ -1,4 +1,4 @@
-import { Book, BookListResponse, CreateBookRequest, BookSearchParams } from '../types/book';
+import { Book, BookListResponse, CreateBookRequest, BookSearchParams, SalesResponse, SalesSearchParams } from '../types/book';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
 
@@ -112,5 +112,30 @@ export const bookApi = {
       body: JSON.stringify({ quantity }),
     });
     return handleResponse<Book>(response);
+  },
+
+  // Get all sales with pagination
+  async getSales(params: SalesSearchParams = {}): Promise<SalesResponse> {
+    const searchParams = new URLSearchParams();
+    
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+    if (params.bookId) searchParams.append('bookId', params.bookId);
+
+    const url = `${API_BASE_URL}/sales?${searchParams.toString()}`;
+    const response = await fetch(url);
+    return handleResponse<SalesResponse>(response);
+  },
+
+  // Get sales for a specific book
+  async getBookSales(bookId: string, params: { page?: number; limit?: number } = {}): Promise<SalesResponse> {
+    const searchParams = new URLSearchParams();
+    
+    if (params.page) searchParams.append('page', params.page.toString());
+    if (params.limit) searchParams.append('limit', params.limit.toString());
+
+    const url = `${API_BASE_URL}/books/${bookId}/sales?${searchParams.toString()}`;
+    const response = await fetch(url);
+    return handleResponse<SalesResponse>(response);
   },
 }; 

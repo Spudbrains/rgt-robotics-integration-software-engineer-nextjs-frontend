@@ -76,6 +76,16 @@ export default function BookCard({ book, showStock = true, onSell }: BookCardPro
           )}
         </div>
 
+        {/* Sales Information */}
+        {book.totalSales !== undefined && book.totalSales > 0 && (
+          <div className="mt-2 flex items-center text-sm text-gray-600">
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            <span>{book.totalSales} sold</span>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="mt-4 flex gap-2">
           <Link

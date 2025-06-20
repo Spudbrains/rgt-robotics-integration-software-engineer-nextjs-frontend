@@ -11,6 +11,7 @@ export interface Book {
   imageUrl?: string;
   createdAt: string;
   updatedAt: string;
+  totalSales?: number;
 }
 
 export interface BookListResponse {
@@ -44,4 +45,27 @@ export interface BookSearchParams {
   genre?: string;
   sortBy?: 'title' | 'author' | 'price' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
+}
+
+export interface Sale {
+  id: string;
+  bookId: string;
+  book: Book;
+  quantity: number;
+  totalPrice: number;
+  soldAt: string;
+}
+
+export interface SalesResponse {
+  sales: Sale[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface SalesSearchParams {
+  page?: number;
+  limit?: number;
+  bookId?: string;
 } 
