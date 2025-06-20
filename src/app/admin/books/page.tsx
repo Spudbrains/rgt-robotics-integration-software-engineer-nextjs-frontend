@@ -139,7 +139,10 @@ function AdminBooksContent() {
 
     try {
       await bookApi.deleteBook(bookId);
-      fetchBooks(); // Refresh list
+      
+      // Update local state immediately
+      setBooks(prevBooks => prevBooks.filter(book => book.id !== bookId));
+      setTotalBooks(prevTotal => prevTotal - 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete book');
     }
@@ -151,13 +154,25 @@ function AdminBooksContent() {
     setError(null);
     try {
       if (editingBook) {
-        await bookApi.updateBook(editingBook.id, formData);
+        const updatedBook = await bookApi.updateBook(editingBook.id, formData);
+        
+        // Update local state immediately for edits
+        setBooks(prevBooks => 
+          prevBooks.map(book => 
+            book.id === editingBook.id 
+              ? { ...book, ...formData, id: book.id, createdAt: book.createdAt, updatedAt: updatedBook.updatedAt }
+              : book
+          )
+        );
       } else {
-        await bookApi.createBook(formData);
+        const newBook = await bookApi.createBook(formData);
+        
+        // Add new book to local state
+        setBooks(prevBooks => [newBook, ...prevBooks]);
+        setTotalBooks(prevTotal => prevTotal + 1);
       }
       setShowForm(false);
       resetForm();
-      fetchBooks(); // Refresh list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save book');
     } finally {

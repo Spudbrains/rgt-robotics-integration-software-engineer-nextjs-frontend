@@ -109,7 +109,18 @@ function BookListContent() {
   const handleSell = async (bookId: string) => {
     try {
       await bookApi.sellBook(bookId, 1);
-      fetchBooks(); // Re-fetch to update stock
+      
+      // Update the local state immediately instead of re-fetching
+      setBooks(prevBooks => 
+        prevBooks.map(book => 
+          book.id === bookId 
+            ? { ...book, stock: Math.max(0, book.stock - 1) }
+            : book
+        )
+      );
+      
+      // Also update total books count if needed
+      setTotalBooks(prevTotal => prevTotal - 1);
     } catch (err) {
       console.error('Error selling book:', err);
       setError(err instanceof Error ? err.message : 'Failed to sell book');
