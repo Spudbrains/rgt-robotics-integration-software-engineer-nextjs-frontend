@@ -44,7 +44,7 @@ const AdminBooksContent = memo(function AdminBooksContent() {
     setCurrentPage(urlPage);
     setSearchQuery(urlSearch);
     isInitializedRef.current = true;
-  }, [searchParams]);
+  }, []);
   
   // Debug URL parameters on every render
   console.log('Admin: URL Parameters on render:', {

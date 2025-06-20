@@ -46,7 +46,7 @@ const BookListContent = memo(function BookListContent() {
     setSortBy(urlSortBy);
     setSortOrder(urlSortOrder);
     isInitializedRef.current = true;
-  }, [searchParams]);
+  }, []);
 
   // Debug URL parameters on every render
   console.log('Books: URL Parameters on render:', {
