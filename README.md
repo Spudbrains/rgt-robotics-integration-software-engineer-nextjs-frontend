@@ -158,7 +158,7 @@ sudo apt install -y code
 ### Step 6: Clone and Setup the Project
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/Spudbrains/rgt-robotics-integration-software-engineer-nextjs-frontend
 cd rgt-robotics-integration-software-engineer-nextjs-frontend
 
 # Install project dependencies
