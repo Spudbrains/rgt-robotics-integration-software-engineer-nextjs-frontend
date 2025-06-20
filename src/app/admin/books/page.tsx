@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Book, CreateBookRequest } from '../../types/book';
 import { bookApi } from '../../services/api';
 import BookCard from '../../components/BookCard';
@@ -12,13 +13,19 @@ interface BookFormData extends CreateBookRequest {
 }
 
 export default function AdminBooksPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalBooks, setTotalBooks] = useState(0);
+  
+  // Get state from URL parameters
+  const currentPage = parseInt(searchParams.get('page') || '0');
+  const searchQuery = searchParams.get('search') || '';
   
   // Form states
   const [showForm, setShowForm] = useState(false);
@@ -34,6 +41,18 @@ export default function AdminBooksPage() {
     imageUrl: '',
   });
   const [submitting, setSubmitting] = useState(false);
+
+  const updateURL = useCallback((params: Record<string, string>) => {
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        newSearchParams.set(key, value);
+      } else {
+        newSearchParams.delete(key);
+      }
+    });
+    router.push(`${pathname}?${newSearchParams.toString()}`);
+  }, [searchParams, router, pathname]);
 
   const fetchBooks = useCallback(async () => {
     try {
@@ -62,12 +81,11 @@ export default function AdminBooksPage() {
   }, [fetchBooks]);
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(0);
+    updateURL({ search: query, page: '0' });
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    updateURL({ page: page.toString() });
   };
 
   const resetForm = () => {

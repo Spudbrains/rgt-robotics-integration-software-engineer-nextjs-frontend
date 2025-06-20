@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Book, BookListResponse } from '../types/book';
 import { bookApi } from '../services/api';
 import BookCard from '../components/BookCard';
@@ -8,15 +9,33 @@ import SearchBar from '../components/SearchBar';
 import Pagination from '../components/Pagination';
 
 export default function BookListPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalBooks, setTotalBooks] = useState(0);
-  const [sortBy, setSortBy] = useState<'title' | 'author' | 'price' | 'createdAt'>('title');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  
+  // Get state from URL parameters
+  const currentPage = parseInt(searchParams.get('page') || '0');
+  const searchQuery = searchParams.get('search') || '';
+  const sortBy = (searchParams.get('sortBy') as 'title' | 'author' | 'price' | 'createdAt') || 'title';
+  const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
+
+  const updateURL = useCallback((params: Record<string, string>) => {
+    const newSearchParams = new URLSearchParams(searchParams.toString());
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        newSearchParams.set(key, value);
+      } else {
+        newSearchParams.delete(key);
+      }
+    });
+    router.push(`${pathname}?${newSearchParams.toString()}`);
+  }, [searchParams, router, pathname]);
 
   const fetchBooks = useCallback(async () => {
     try {
@@ -47,12 +66,11 @@ export default function BookListPage() {
   }, [fetchBooks]);
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(0); // Reset to first page when searching
+    updateURL({ search: query, page: '0' }); // Reset to first page when searching
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page); // Pagination component now handles 0-based internally
+    updateURL({ page: page.toString() });
   };
 
   const handleSell = async (bookId: string) => {
@@ -68,10 +86,10 @@ export default function BookListPage() {
 
   const handleSortChange = (newSortBy: typeof sortBy) => {
     if (sortBy === newSortBy) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      updateURL({ sortOrder: newSortOrder });
     } else {
-      setSortBy(newSortBy);
-      setSortOrder('asc');
+      updateURL({ sortBy: newSortBy, sortOrder: 'asc' });
     }
   };
 
