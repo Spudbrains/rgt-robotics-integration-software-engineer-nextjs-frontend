@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Book, CreateBookRequest } from '../../types/book';
 import { bookApi } from '../../services/api';
@@ -26,6 +26,10 @@ function AdminBooksContent() {
   // Use local state for pagination to prevent flickering
   const [currentPage, setCurrentPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Request deduplication
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastRequestRef = useRef<string>('');
 
   // Initialize state from URL parameters on mount
   useEffect(() => {
@@ -87,6 +91,24 @@ function AdminBooksContent() {
   }, [searchParams, router, pathname]);
 
   const fetchBooks = useCallback(async () => {
+    const requestKey = `page=${currentPage}&search=${searchQuery}`;
+    
+    // Prevent duplicate requests
+    if (lastRequestRef.current === requestKey) {
+      console.log('Admin: Skipping duplicate request for:', requestKey);
+      return;
+    }
+    
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      console.log('Admin: Cancelling previous request');
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    lastRequestRef.current = requestKey;
+    
     try {
       setLoading(true);
       setError(null);
@@ -118,8 +140,13 @@ function AdminBooksContent() {
         }
       }, 100);
     } catch (err) {
+      // Don't set error if request was aborted
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log('Admin: Request was aborted');
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Failed to fetch books');
-      console.error('Error fetching books:', err);
+      console.error('Admin: Error fetching books:', err);
     } finally {
       setLoading(false);
     }
@@ -129,6 +156,15 @@ function AdminBooksContent() {
     console.log('Admin: useEffect triggered - fetching books for page:', currentPage);
     fetchBooks();
   }, [currentPage, searchQuery]);
+
+  // Cleanup function for abort controller
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const handleSearch = (query: string) => {
     console.log('Admin: handleSearch called with query:', query);

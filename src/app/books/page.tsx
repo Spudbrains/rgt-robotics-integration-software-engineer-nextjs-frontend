@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Book, BookListResponse } from '../types/book';
 import { bookApi } from '../services/api';
@@ -24,6 +24,10 @@ function BookListContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'title' | 'author' | 'price' | 'createdAt'>('title');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Request deduplication
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastRequestRef = useRef<string>('');
 
   // Initialize state from URL parameters on mount
   useEffect(() => {
@@ -80,11 +84,29 @@ function BookListContent() {
   }, [searchParams, router, pathname]);
 
   const fetchBooks = useCallback(async () => {
+    const requestKey = `page=${currentPage}&search=${searchQuery}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
+    
+    // Prevent duplicate requests
+    if (lastRequestRef.current === requestKey) {
+      console.log('Books: Skipping duplicate request for:', requestKey);
+      return;
+    }
+    
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      console.log('Books: Cancelling previous request');
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+    lastRequestRef.current = requestKey;
+    
     try {
       setLoading(true);
       setError(null);
       
-      console.log('Fetching books with params:', { currentPage, searchQuery, sortBy, sortOrder });
+      console.log('Books: Fetching books with params:', { currentPage, searchQuery, sortBy, sortOrder });
       
       const response: BookListResponse = await bookApi.getBooks({
         page: currentPage,
@@ -94,8 +116,8 @@ function BookListContent() {
         sortOrder,
       });
 
-      console.log('Received response:', response);
-      console.log('Setting books, totalPages, totalBooks:', {
+      console.log('Books: Received response:', response);
+      console.log('Books: Setting books, totalPages, totalBooks:', {
         booksCount: response.books.length,
         totalPages: response.totalPages,
         total: response.total
@@ -113,8 +135,13 @@ function BookListContent() {
         }
       }, 100);
     } catch (err) {
+      // Don't set error if request was aborted
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.log('Books: Request was aborted');
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Failed to fetch books');
-      console.error('Error fetching books:', err);
+      console.error('Books: Error fetching books:', err);
     } finally {
       setLoading(false);
     }
@@ -124,6 +151,15 @@ function BookListContent() {
     console.log('Books: useEffect triggered - fetching books for page:', currentPage);
     fetchBooks();
   }, [currentPage, searchQuery, sortBy, sortOrder]);
+
+  // Cleanup function for abort controller
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const handleSearch = (query: string) => {
     console.log('Books: handleSearch called with query:', query);
