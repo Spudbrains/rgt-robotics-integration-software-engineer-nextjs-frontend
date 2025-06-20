@@ -23,9 +23,20 @@ function AdminBooksContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalBooks, setTotalBooks] = useState(0);
   
-  // Get state from URL parameters
-  const currentPage = parseInt(searchParams.get('page') || '0');
-  const searchQuery = searchParams.get('search') || '';
+  // Use local state for pagination to prevent flickering
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Initialize state from URL parameters on mount
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get('page') || '0');
+    const urlSearch = searchParams.get('search') || '';
+    
+    console.log('Admin: Initializing from URL params:', { urlPage, urlSearch });
+    
+    setCurrentPage(urlPage);
+    setSearchQuery(urlSearch);
+  }, []); // Only run on mount
   
   // Debug URL parameters on every render
   console.log('Admin: URL Parameters on render:', {
@@ -120,6 +131,9 @@ function AdminBooksContent() {
   }, [currentPage, searchQuery]);
 
   const handleSearch = (query: string) => {
+    console.log('Admin: handleSearch called with query:', query);
+    setSearchQuery(query);
+    setCurrentPage(0);
     updateURL({ search: query, page: '0' });
   };
 
@@ -129,6 +143,9 @@ function AdminBooksContent() {
       page: searchParams.get('page'),
       search: searchParams.get('search')
     });
+    
+    // Update local state immediately
+    setCurrentPage(page);
     
     // Save current scroll position before navigation
     sessionStorage.setItem('scrollY', window.scrollY.toString());

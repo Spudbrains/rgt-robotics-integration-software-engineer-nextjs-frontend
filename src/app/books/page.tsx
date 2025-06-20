@@ -19,11 +19,26 @@ function BookListContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalBooks, setTotalBooks] = useState(0);
   
-  // Get state from URL parameters
-  const currentPage = parseInt(searchParams.get('page') || '0');
-  const searchQuery = searchParams.get('search') || '';
-  const sortBy = (searchParams.get('sortBy') as 'title' | 'author' | 'price' | 'createdAt') || 'title';
-  const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
+  // Use local state for pagination to prevent flickering
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'title' | 'author' | 'price' | 'createdAt'>('title');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Initialize state from URL parameters on mount
+  useEffect(() => {
+    const urlPage = parseInt(searchParams.get('page') || '0');
+    const urlSearch = searchParams.get('search') || '';
+    const urlSortBy = (searchParams.get('sortBy') as 'title' | 'author' | 'price' | 'createdAt') || 'title';
+    const urlSortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
+    
+    console.log('Books: Initializing from URL params:', { urlPage, urlSearch, urlSortBy, urlSortOrder });
+    
+    setCurrentPage(urlPage);
+    setSearchQuery(urlSearch);
+    setSortBy(urlSortBy);
+    setSortOrder(urlSortOrder);
+  }, []); // Only run on mount
 
   // Debug URL parameters on every render
   console.log('Books: URL Parameters on render:', {
@@ -111,7 +126,10 @@ function BookListContent() {
   }, [currentPage, searchQuery, sortBy, sortOrder]);
 
   const handleSearch = (query: string) => {
-    updateURL({ search: query, page: '0' }); // Reset to first page when searching
+    console.log('Books: handleSearch called with query:', query);
+    setSearchQuery(query);
+    setCurrentPage(0); // Reset to first page when searching
+    updateURL({ search: query, page: '0' });
   };
 
   const handlePageChange = (page: number) => {
@@ -122,6 +140,9 @@ function BookListContent() {
       sortBy: searchParams.get('sortBy'),
       sortOrder: searchParams.get('sortOrder')
     });
+    
+    // Update local state immediately
+    setCurrentPage(page);
     
     // Save current scroll position before navigation
     sessionStorage.setItem('scrollY', window.scrollY.toString());
@@ -151,10 +172,14 @@ function BookListContent() {
   };
 
   const handleSortChange = (newSortBy: typeof sortBy) => {
+    console.log('Books: handleSortChange called with sortBy:', newSortBy);
     if (sortBy === newSortBy) {
       const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      setSortOrder(newSortOrder);
       updateURL({ sortOrder: newSortOrder });
     } else {
+      setSortBy(newSortBy);
+      setSortOrder('asc');
       updateURL({ sortBy: newSortBy, sortOrder: 'asc' });
     }
   };
