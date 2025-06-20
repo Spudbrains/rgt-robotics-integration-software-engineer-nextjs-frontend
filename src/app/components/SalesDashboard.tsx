@@ -185,7 +185,7 @@ export default function SalesDashboard({ className = "" }: SalesDashboardProps) 
                         {formatCurrency(sale.totalPrice)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(sale.soldAt)}
+                        {formatDate(sale.saleDate)}
                       </td>
                     </tr>
                   ))}

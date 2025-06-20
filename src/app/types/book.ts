@@ -53,7 +53,7 @@ export interface Sale {
   book: Book;
   quantity: number;
   totalPrice: number;
-  soldAt: string;
+  saleDate: string;
 }
 
 export interface SalesResponse {
