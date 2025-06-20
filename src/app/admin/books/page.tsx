@@ -27,6 +27,22 @@ function AdminBooksContent() {
   const currentPage = parseInt(searchParams.get('page') || '0');
   const searchQuery = searchParams.get('search') || '';
   
+  // Debug URL parameters on every render
+  console.log('Admin: URL Parameters on render:', {
+    page: searchParams.get('page'),
+    search: searchParams.get('search'),
+    currentPage,
+    searchQuery
+  });
+  
+  // Track URL parameter changes
+  useEffect(() => {
+    console.log('Admin: URL parameters changed:', {
+      page: searchParams.get('page'),
+      search: searchParams.get('search')
+    });
+  }, [searchParams]);
+  
   // Form states
   const [showForm, setShowForm] = useState(false);
   const [editingBook, setEditingBook] = useState<Book | null>(null);
@@ -55,7 +71,7 @@ function AdminBooksContent() {
     const newURL = `${pathname}?${newSearchParams.toString()}`;
     console.log('Admin: Navigating to new URL:', newURL);
     
-    // Use replace instead of push to avoid scroll to top
+    // Use replace with scroll: false to prevent auto-scroll
     router.replace(newURL, { scroll: false });
   }, [searchParams, router, pathname]);
 
@@ -99,6 +115,7 @@ function AdminBooksContent() {
   }, [currentPage, searchQuery]);
 
   useEffect(() => {
+    console.log('Admin: useEffect triggered - fetching books for page:', currentPage);
     fetchBooks();
   }, [fetchBooks]);
 

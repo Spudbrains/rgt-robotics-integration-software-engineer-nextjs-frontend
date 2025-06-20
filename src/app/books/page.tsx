@@ -25,6 +25,28 @@ function BookListContent() {
   const sortBy = (searchParams.get('sortBy') as 'title' | 'author' | 'price' | 'createdAt') || 'title';
   const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc') || 'asc';
 
+  // Debug URL parameters on every render
+  console.log('Books: URL Parameters on render:', {
+    page: searchParams.get('page'),
+    search: searchParams.get('search'),
+    sortBy: searchParams.get('sortBy'),
+    sortOrder: searchParams.get('sortOrder'),
+    currentPage,
+    searchQuery,
+    sortBy: sortBy,
+    sortOrder: sortOrder
+  });
+
+  // Track URL parameter changes
+  useEffect(() => {
+    console.log('Books: URL parameters changed:', {
+      page: searchParams.get('page'),
+      search: searchParams.get('search'),
+      sortBy: searchParams.get('sortBy'),
+      sortOrder: searchParams.get('sortOrder')
+    });
+  }, [searchParams]);
+
   const updateURL = useCallback((params: Record<string, string>) => {
     console.log('Books: updateURL called with params:', params);
     const newSearchParams = new URLSearchParams(searchParams.toString());
@@ -38,7 +60,7 @@ function BookListContent() {
     const newURL = `${pathname}?${newSearchParams.toString()}`;
     console.log('Books: Navigating to new URL:', newURL);
     
-    // Use replace instead of push to avoid scroll to top
+    // Use replace with scroll: false to prevent auto-scroll
     router.replace(newURL, { scroll: false });
   }, [searchParams, router, pathname]);
 
@@ -84,6 +106,7 @@ function BookListContent() {
   }, [currentPage, searchQuery, sortBy, sortOrder]);
 
   useEffect(() => {
+    console.log('Books: useEffect triggered - fetching books for page:', currentPage);
     fetchBooks();
   }, [fetchBooks]);
 
