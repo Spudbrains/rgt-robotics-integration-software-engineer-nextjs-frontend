@@ -21,26 +21,27 @@ export default function BookCard({ book, showStock = true, onSell }: BookCardPro
   };
 
   const handleImageError = () => {
+    console.error('Failed to load image:', book.imageUrl);
     setImageError(true);
   };
+  
+  const placeholderImage = `https://via.placeholder.com/300x200.png?text=${encodeURIComponent(book.title)}`;
+  const imageUrl = imageError ? placeholderImage : (book.imageUrl || placeholderImage);
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
       {/* Book Image */}
       <div className="h-48 bg-gray-200 flex items-center justify-center">
-        {book.imageUrl && !imageError ? (
-          <Image
-            src={book.imageUrl}
-            alt={book.title}
-            width={300}
-            height={200}
-            className="w-full h-full object-cover"
-            onError={handleImageError}
-            unoptimized={book.imageUrl.startsWith('http://localhost')}
-          />
-        ) : (
-          <div className="text-gray-400 text-4xl">📚</div>
-        )}
+        <Image
+          src={imageUrl}
+          alt={book.title}
+          width={300}
+          height={200}
+          className="w-full h-full object-cover"
+          onError={handleImageError}
+          placeholder="blur"
+          blurDataURL="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        />
       </div>
 
       {/* Book Info */}
