@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams, usePathname } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { Book, BookListResponse } from '../types/book';
 import { bookApi } from '../services/api';
 import BookCard from '../components/BookCard';
@@ -10,6 +10,7 @@ import Pagination from '../components/Pagination';
 
 function BookListContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const pathname = usePathname();
   
   const [books, setBooks] = useState<Book[]>([]);
@@ -72,11 +73,11 @@ function BookListContent() {
       }
     });
     const newURL = `${pathname}?${newSearchParams.toString()}`;
-    console.log('Books: Would navigate to new URL:', newURL);
+    console.log('Books: Navigating to new URL:', newURL);
     
-    // Don't actually navigate - just update the URL in the address bar without triggering history
-    window.history.replaceState({}, '', newURL);
-  }, [searchParams, pathname]);
+    // Use Next.js router with scroll: false to prevent auto-scrolling
+    router.replace(newURL, { scroll: false });
+  }, [searchParams, router, pathname]);
 
   const fetchBooks = useCallback(async () => {
     try {
@@ -117,7 +118,7 @@ function BookListContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage, searchQuery, sortBy, sortOrder]);
 
   useEffect(() => {
     console.log('Books: useEffect triggered - fetching books for page:', currentPage);
