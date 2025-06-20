@@ -54,7 +54,9 @@ function AdminBooksContent() {
     });
     const newURL = `${pathname}?${newSearchParams.toString()}`;
     console.log('Admin: Navigating to new URL:', newURL);
-    router.push(newURL);
+    
+    // Use replace instead of push to avoid scroll to top
+    router.replace(newURL, { scroll: false });
   }, [searchParams, router, pathname]);
 
   const fetchBooks = useCallback(async () => {
@@ -80,6 +82,14 @@ function AdminBooksContent() {
       setBooks(response.books);
       setTotalPages(response.totalPages);
       setTotalBooks(response.total);
+      
+      // Restore scroll position after content update
+      setTimeout(() => {
+        const savedScrollY = sessionStorage.getItem('scrollY');
+        if (savedScrollY) {
+          window.scrollTo(0, parseInt(savedScrollY));
+        }
+      }, 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch books');
       console.error('Error fetching books:', err);
@@ -102,8 +112,22 @@ function AdminBooksContent() {
       page: searchParams.get('page'),
       search: searchParams.get('search')
     });
+    
+    // Save current scroll position before navigation
+    sessionStorage.setItem('scrollY', window.scrollY.toString());
+    
     updateURL({ page: page.toString() });
   };
+
+  // Save scroll position on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      sessionStorage.setItem('scrollY', window.scrollY.toString());
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const resetForm = () => {
     setFormData({
