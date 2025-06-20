@@ -33,8 +33,8 @@ function BookListContent() {
     sortOrder: searchParams.get('sortOrder'),
     currentPage,
     searchQuery,
-    sortBy: sortBy,
-    sortOrder: sortOrder
+    parsedSortBy: sortBy,
+    parsedSortOrder: sortOrder
   });
 
   // Track URL parameter changes
